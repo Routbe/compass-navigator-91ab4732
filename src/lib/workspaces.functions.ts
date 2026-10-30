@@ -53,6 +53,8 @@ const wizardSchema = z.object({
   description: z.string().trim().max(280).optional(),
   slugBase: z.string().trim().toLowerCase().max(34).optional(),
   category: z.enum(["business", "agency", "nonprofit", "event", "project"]).optional(),
+  /** The suffix shown in the wizard preview; used when still free. */
+  suffix: z.string().regex(/^[a-z0-9]{4}$/).optional(),
   invites: z.array(z.object({ email: z.string().trim().toLowerCase().email().max(254), role: z.enum(["admin", "developer", "viewer"]) })).max(20).optional(),
 });
 
@@ -84,7 +86,7 @@ export const createWorkspace = createServerFn({ method: "POST" })
     let slug = "";
     // Nieuwe workspaces starten op het gratis plan: altijd een willekeurige suffix.
     for (let i = 0; i < 12 && !slug; i++) {
-      const candidate = matrixWorkspaceSlug(base, "free");
+      const candidate = i === 0 && data.suffix ? matrixWorkspaceSlug(base, "free", data.suffix) : matrixWorkspaceSlug(base, "free");
       if (!isValidWorkspaceSlug(candidate)) continue;
       const taken = (await sql`select 1 from public.workspaces where slug = ${candidate} limit 1`) as unknown[];
       if (!taken.length) slug = candidate;
