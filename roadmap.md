@@ -87,12 +87,13 @@
 - [x] F4 X-Rout-Signature webhooks + retry-queue; client_credentials (15 min)
 - [x] Platform-iconen (PeerTube, Vimeo, Dailymotion, Tumblr, Lemmy, Misskey) + booking-icoon
 - [x] /studio/account: identiteitskaart + 'Sociale accounts & verificatie' weg
-- [ ] Betaalde €3,99-verificatie (Early Believer) schrappen — wacht op keuze gebruiker (wat met bestaande betaalde vinkjes?)
+- [x] €3,99-verificatie uit Studio en vinkje-venster; Pioneer-melding met gratis paspoortscan
+- [ ] Bestaande betaalde vinkjes intrekken tot paspoortscan (is_paid/is_early_believer telt nog als geverifieerd op ~10 plekken) — wacht op akkoord
 - [x] Vertalingen accountpagina
 - [ ] Beveiligingscentrum (3 lagen) + user_mfa_methods (db/0130) + herstelcodes met step-up + SMS-2FA (wacht op SMS-dienst)
 - [x] Sticky tabbalken + actieve tab in beeld
 - [x] Custom domain root redirect (db/0128) + Studio-keuze
-- [ ] Scoped theme: overrides ook voor vorm/typografie/radius/kleuren
+- [x] Scoped theme: overrides ook voor vorm/stijl/typografie/radius/kleuren (Studio + publiek profiel)
 - [x] Neon gekoppeld (31/10): 141 tabellen, alleen 0125 bewust open
 - [ ] Webhook-eindpunten beheren in console (UI + URL-check tegen privé-adressen)
 - [x] 0128 + 0129 op Neon toegepast (migrate-gateway --only=...)
