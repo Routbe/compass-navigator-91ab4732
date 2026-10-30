@@ -126,6 +126,15 @@ export interface ProfileRecord {
   verified?: boolean;
   /** Aliasprofiel (`/u/…`) van een lid met een geverifieerd rootprofiel. */
   human_linked?: boolean;
+  /** Tier 2: legal name verified from a government document (or legacy paid verification). */
+  legal_identity_verified?: boolean;
+  /** Tier 1: proven unique human (pseudonym-safe). */
+  real_human_verified?: boolean;
+  /** Server-signed Account Genesis stamp (HMAC of id + creation time). */
+  genesis_stamp?: string | null;
+  created_at_iso?: string | null;
+  early_believer_id?: string | null;
+  early_believer_at?: string | null;
   /** Server-side afgeleid van de eigenaar, los van het identiteitsvinkje. */
   is_pro?: boolean;
   /** Goedgekeurd bedrijf: zwarte badge, pagina op de officiële domeinnaam. */
