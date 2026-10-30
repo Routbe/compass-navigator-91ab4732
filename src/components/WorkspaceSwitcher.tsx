@@ -7,7 +7,7 @@ import { toast } from "sonner";
 import { useNavigate } from "@tanstack/react-router";
 import { featureForPath, scopedPath } from "@/lib/scope-routes";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
-import { createWorkspace, getWorkspaceContext, setActiveWorkspace } from "@/lib/workspaces.functions";
+import { getWorkspaceContext, setActiveWorkspace } from "@/lib/workspaces.functions";
 
 export const WORKSPACE_QUERY_KEY = ["workspace-context"] as const;
 
@@ -31,7 +31,6 @@ export function useScope() {
   const navigate = useNavigate();
   const { data } = useWorkspaceContext();
   const setActive = useServerFn(setActiveWorkspace);
-  const create = useServerFn(createWorkspace);
   const [busy, setBusy] = useState(false);
 
   const active = data?.workspaces.find((w) => w.id === data.activeWorkspaceId) ?? null;
@@ -55,19 +54,9 @@ export function useScope() {
     }
   };
 
-  const newWorkspace = async () => {
-    const name = window.prompt(t("workspace.namePrompt"));
-    if (!name?.trim()) return;
-    setBusy(true);
-    try {
-      await create({ data: { name: name.trim() } });
-      await qc.invalidateQueries();
-      toast.success(t("workspace.created"));
-    } catch (e) {
-      toast.error(e instanceof Error ? e.message : t("workspace.createError"));
-    } finally {
-      setBusy(false);
-    }
+  /** Opens the 5-step wizard; the workspace is created only at its last step. */
+  const newWorkspace = () => {
+    void navigate({ to: "/studio/workspaces/new" });
   };
 
   return { scope, active, workspaces: data?.workspaces ?? [], switchTo, newWorkspace, busy };
@@ -96,7 +85,7 @@ export function WorkspaceSwitcher({ alwaysShow = false }: { alwaysShow?: boolean
       </DropdownMenuTrigger>
       <DropdownMenuContent align="start" className="w-64">
         <DropdownMenuItem onClick={() => switchTo(null)}>
-          <User className="mr-2 h-4 w-4" /> {t("workspace.personal")}
+          <User className="mr-2 h-4 w-4" /> 👤 {t("workspace.personal")}
           {!active && <Check className="ml-auto h-4 w-4" />}
         </DropdownMenuItem>
         {data.workspaces.length > 0 && (
@@ -120,7 +109,7 @@ export function WorkspaceSwitcher({ alwaysShow = false }: { alwaysShow?: boolean
           </DropdownMenuItem>
         )}
         <DropdownMenuItem onClick={newWorkspace}>
-          <Plus className="mr-2 h-4 w-4" /> {t("workspace.new")}
+          <Plus className="mr-2 h-4 w-4" /> ➕ {t("workspace.new")}
         </DropdownMenuItem>
       </DropdownMenuContent>
     </DropdownMenu>

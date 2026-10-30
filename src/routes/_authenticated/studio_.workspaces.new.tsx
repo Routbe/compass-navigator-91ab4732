@@ -108,7 +108,7 @@ function NewWorkspaceWizard() {
       await qc.cancelQueries();
       qc.clear();
       toast.success(res.invited ? `Workspace aangemaakt. ${res.invited} uitnodiging(en) verstuurd.` : "Workspace aangemaakt.");
-      void navigate({ to: scopedPath(res.slug, "profile") as never });
+      void navigate({ to: scopedPath(res.slug, "studio") as never });
     } catch (e) {
       toast.error(e instanceof Error ? e.message : "Workspace kon niet worden aangemaakt.");
     } finally {
@@ -236,7 +236,7 @@ function NewWorkspaceWizard() {
           <>
             {s?.quotaBytes !== undefined && (
               <p className="text-sm text-muted-foreground">
-                Je persoonlijke opslag: {formatMb(Math.round((s.usedBytes ?? 0) / 1048576))} van {formatMb(Math.round(s.quotaBytes / 1048576))} gebruikt. Workspace-opslag staat daar los van.
+                Opslag in je huidige omgeving: {formatMb(Math.round((s.usedBytes ?? 0) / 1048576))} van {formatMb(Math.round(s.quotaBytes / 1048576))} gebruikt. De nieuwe workspace krijgt een eigen, aparte opslag.
               </p>
             )}
             <div className="grid gap-2 sm:grid-cols-3">
