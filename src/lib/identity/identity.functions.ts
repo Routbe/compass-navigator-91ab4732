@@ -12,8 +12,11 @@ export const getMyIdentityStatus = createServerFn({ method: "POST" })
     const { sql } = await import("@/lib/neon");
     const pioneer = (await sql`select coalesce(is_early_believer, false) or coalesce(is_paid, false) as p
       from public.profiles where id = ${context.userId} limit 1`.catch(() => [])) as { p: boolean }[];
+    const { tiersFor } = await import("./identity-tiers");
+    const tiers = tiersFor([{ provider: status.provider, verified: status.isVerified }]);
     return {
       ...status,
+      ...tiers,
       /** Paid the legacy €3.99 verification: shown as Pioneer, must still verify identity. */
       isPioneer: Boolean(pioneer[0]?.p),
       wConfigured: providerConfigured("w_identity"),

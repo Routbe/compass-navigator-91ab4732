@@ -311,7 +311,59 @@ export async function readPublicProfile(rawHandle: string) {
   } catch (error) {
     console.warn("[public-profile:social-links:skipped]", username, error);
   }
-  return { ...profile, is_pro: hasProfilePro(profile), social_links: socialLinks } as Row;
+  const trust = await readTrustMeta(profile);
+  return { ...profile, ...trust, is_pro: hasProfilePro(profile), social_links: socialLinks } as Row;
+}
+
+/**
+ * Identity tier + genesis metadata for a public root profile. The blue mark needs
+ * tier 2 (legal identity); members who paid the legacy verification keep theirs.
+ */
+async function readTrustMeta(profile: Row) {
+  const id = profile["id"] as string;
+  let legal = false;
+  let human = false;
+  let grandfathered = false;
+  let earlyAt: string | null = null;
+  try {
+    const { tiersFor } = await import("./identity/identity-tiers");
+    const rows = (await sql`
+      select iv.verification_provider::text as provider, coalesce(iv.is_verified, false) as verified,
+             coalesce((to_jsonb(p) ->> 'is_paid')::boolean, false) as is_paid,
+             to_jsonb(p) ->> 'early_believer_at' as early_believer_at
+        from public.profiles p
+        left join public.identity_verifications iv on iv.user_id = p.id
+       where p.id = ${id} limit 1`) as Row[];
+    const r = rows[0];
+    const tiers = tiersFor(r ? [{ provider: (r["provider"] as string | null) ?? null, verified: r["verified"] === true }] : []);
+    legal = tiers.tier2LegalIdentity;
+    human = tiers.tier1RealHuman;
+    grandfathered = r?.["is_paid"] === true;
+    earlyAt = (r?.["early_believer_at"] as string | null) ?? null;
+  } catch (error) {
+    console.warn("[public-profile:trust:skipped]", error);
+  }
+  let genesis: string | null = null;
+  let earlyId: string | null = null;
+  try {
+    const { resolveAuthSecret } = await import("./better-auth.server");
+    const secret = resolveAuthSecret()?.secret;
+    if (secret && profile["created_at"]) {
+      const { genesisStamp, earlyBelieverId } = await import("./genesis-stamp");
+      genesis = await genesisStamp(secret, id, String(profile["created_at"] instanceof Date ? (profile["created_at"] as Date).toISOString() : profile["created_at"]));
+      if (profile["is_early_believer"] === true) earlyId = await earlyBelieverId(secret, id);
+    }
+  } catch (error) {
+    console.warn("[public-profile:genesis:skipped]", error);
+  }
+  return {
+    legal_identity_verified: legal || grandfathered,
+    real_human_verified: human,
+    genesis_stamp: genesis,
+    created_at_iso: profile["created_at"] ? new Date(profile["created_at"] as string).toISOString() : null,
+    early_believer_id: earlyId,
+    early_believer_at: earlyAt,
+  };
 }
 
 /** Aggregated, privacy-clean studio analytics: counts only, no visitor data. */
