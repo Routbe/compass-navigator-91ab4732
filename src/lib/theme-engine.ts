@@ -27,7 +27,36 @@ export type GlassTokens = {
 
 export type GlassTargets = Record<"links" | "presence" | "board" | "booking", boolean>;
 
-export type ThemeOverrides = Partial<Record<ComponentScope, Partial<GlassTokens>>>;
+/** Button/typography keys a component may override (same values as the global design prefs). */
+export const OVERRIDE_BUTTON_VARIANTS = ["fill", "outline", "glass", "hard", "soft", "gradient", "neon", "ghost"] as const;
+export const OVERRIDE_BUTTON_RADII = ["pill", "xl", "rounded", "soft", "sharp"] as const;
+export const OVERRIDE_FONT_PAIRINGS = ["modern", "serif", "mono"] as const;
+export type ButtonTokens = {
+  buttonVariant: (typeof OVERRIDE_BUTTON_VARIANTS)[number];
+  buttonRadius: (typeof OVERRIDE_BUTTON_RADII)[number];
+  fontPairing: (typeof OVERRIDE_FONT_PAIRINGS)[number];
+  buttonColor: string | null;
+  buttonTextColor: string | null;
+};
+export const BUTTON_TOKEN_KEYS = ["buttonVariant", "buttonRadius", "fontPairing", "buttonColor", "buttonTextColor"] as const;
+
+/** Shape presets: one click sets both button style and corner radius. */
+export const BUTTON_SHAPE_PRESETS: readonly {
+  id: string;
+  label: string;
+  buttonVariant: ButtonTokens["buttonVariant"];
+  buttonRadius: ButtonTokens["buttonRadius"];
+}[] = [
+  { id: "bordered", label: "Bordered", buttonVariant: "outline", buttonRadius: "rounded" },
+  { id: "flat", label: "Solid Flat", buttonVariant: "fill", buttonRadius: "soft" },
+  { id: "pill", label: "Pill", buttonVariant: "fill", buttonRadius: "pill" },
+  { id: "sharp", label: "Sharp", buttonVariant: "fill", buttonRadius: "sharp" },
+  { id: "glass", label: "Glass", buttonVariant: "glass", buttonRadius: "xl" },
+  { id: "neon", label: "Neon Glow", buttonVariant: "neon", buttonRadius: "rounded" },
+];
+
+export type ScopeOverride = Partial<GlassTokens> & Partial<ButtonTokens>;
+export type ThemeOverrides = Partial<Record<ComponentScope, ScopeOverride>>;
 
 export const DEFAULT_GLASS: GlassTokens = {
   glassStyle: "solid",
@@ -54,10 +83,17 @@ export function normalizeGlassTokens(r: Record<string, unknown>): GlassTokens {
 }
 
 /** Keeps only valid keys; an override never stores a key equal to nothing. */
-function normalizePartial(raw: unknown): Partial<GlassTokens> {
+const HEX = /^#[0-9a-f]{6}$/i;
+const isIn = (list: readonly string[], v: unknown): v is string => typeof v === "string" && list.includes(v);
+function normalizePartial(raw: unknown): ScopeOverride {
   if (!raw || typeof raw !== "object") return {};
   const r = raw as Record<string, unknown>;
-  const out: Partial<GlassTokens> = {};
+  const out: ScopeOverride = {};
+  if (isIn(OVERRIDE_BUTTON_VARIANTS, r["buttonVariant"])) out.buttonVariant = r["buttonVariant"] as ButtonTokens["buttonVariant"];
+  if (isIn(OVERRIDE_BUTTON_RADII, r["buttonRadius"])) out.buttonRadius = r["buttonRadius"] as ButtonTokens["buttonRadius"];
+  if (isIn(OVERRIDE_FONT_PAIRINGS, r["fontPairing"])) out.fontPairing = r["fontPairing"] as ButtonTokens["fontPairing"];
+  if (typeof r["buttonColor"] === "string" && HEX.test(r["buttonColor"])) out.buttonColor = r["buttonColor"];
+  if (typeof r["buttonTextColor"] === "string" && HEX.test(r["buttonTextColor"])) out.buttonTextColor = r["buttonTextColor"];
   if (GLASS_STYLES.includes(r["glassStyle"] as GlassStyle)) out.glassStyle = r["glassStyle"] as GlassStyle;
   if (r["glassOpacity"] !== undefined) out.glassOpacity = clamp(r["glassOpacity"], 5, 50, DEFAULT_GLASS.glassOpacity);
   if (r["glassBlur"] !== undefined) out.glassBlur = clamp(r["glassBlur"], 4, 32, DEFAULT_GLASS.glassBlur);
@@ -90,6 +126,22 @@ export function resolveScopedTokens(global: GlassTokens, overrides: ThemeOverrid
   return scope === "all" ? global : { ...global, ...(overrides[scope] ?? {}) };
 }
 
+/**
+ * Full cascade for one component: `{ ...global, ...(overrides[scope] ?? {}) }`
+ * over every key (glass, button style/radius, typography, colours).
+ * `hasButtonOverride` tells the renderer to apply button keys even when the
+ * global custom-button switch is off.
+ */
+export function resolveComponentDesign<T extends object>(
+  global: T,
+  overrides: ThemeOverrides,
+  scope: ThemeScope,
+): T & ScopeOverride & { hasButtonOverride: boolean } {
+  const o = scope === "all" ? undefined : overrides[scope];
+  const hasButtonOverride = !!o && BUTTON_TOKEN_KEYS.some((k) => o[k] !== undefined);
+  return { ...global, ...(o ?? {}), hasButtonOverride };
+}
+
 /** Effective style for one component type: its override merged over the global defaults. */
 export function getEffectiveComponentStyle(
   theme: { global: GlassTokens; overrides: ThemeOverrides },
@@ -99,11 +151,15 @@ export function getEffectiveComponentStyle(
 }
 
 /** True when a component scope deviates from the global style. */
-export function hasUniqueStyle(global: GlassTokens, overrides: ThemeOverrides, scope: ThemeScope): boolean {
+export function hasUniqueStyle(
+  global: Partial<GlassTokens> & Partial<Record<keyof ButtonTokens, unknown>>,
+  overrides: ThemeOverrides,
+  scope: ThemeScope,
+): boolean {
   if (scope === "all") return false;
   const o = overrides[scope];
   if (!o) return false;
-  return (Object.keys(o) as (keyof GlassTokens)[]).some((k) => o[k] !== global[k]);
+  return (Object.keys(o) as (keyof ScopeOverride)[]).some((k) => o[k] !== global[k]);
 }
 
 /** Writes a patch to the global tokens or to one scope's override. */
@@ -111,7 +167,7 @@ export function applyScopedPatch(
   global: GlassTokens,
   overrides: ThemeOverrides,
   scope: ThemeScope,
-  patch: Partial<GlassTokens>,
+  patch: ScopeOverride,
 ): { global: GlassTokens; overrides: ThemeOverrides } {
   if (scope === "all") return { global: { ...global, ...patch }, overrides };
   return { global, overrides: { ...overrides, [scope]: { ...(overrides[scope] ?? {}), ...patch } } };

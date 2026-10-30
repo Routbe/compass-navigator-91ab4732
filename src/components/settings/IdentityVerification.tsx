@@ -75,6 +75,15 @@ export function IdentityVerification() {
         </div>
       ) : (
         <div className="space-y-3">
+          {s?.isPioneer && (
+            <div role="note" className="rounded-xl border border-primary/30 bg-primary/10 p-3 text-sm">
+              <p className="font-semibold">🚀 Pioneer / Early Supporter</p>
+              <p className="mt-0.5 text-muted-foreground">
+                Als Early Supporter is je identiteitsverificatie via Didit Paspoortscan gratis. Verifieer eenmalig je
+                paspoort om het officiële Blauwe Vinkje te behouden.
+              </p>
+            </div>
+          )}
           <p className="text-sm text-muted-foreground">
             Bewijs dat je een echt persoon bent. Eén geverifieerd account per persoon; we bewaren alleen je naam en een
             onomkeerbare code, nooit je documenten.
