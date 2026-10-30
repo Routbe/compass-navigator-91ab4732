@@ -9,8 +9,13 @@ export const getMyIdentityStatus = createServerFn({ method: "POST" })
     const { diditAvailable } = await import("./identity-rules");
     const status = await getIdentityStatus(context.userId);
     const count = await diditSuccessCount().catch(() => 0);
+    const { sql } = await import("@/lib/neon");
+    const pioneer = (await sql`select coalesce(is_early_believer, false) or coalesce(is_paid, false) as p
+      from public.profiles where id = ${context.userId} limit 1`.catch(() => [])) as { p: boolean }[];
     return {
       ...status,
+      /** Paid the legacy €3.99 verification: shown as Pioneer, must still verify identity. */
+      isPioneer: Boolean(pioneer[0]?.p),
       wConfigured: providerConfigured("w_identity"),
       diditConfigured: providerConfigured("didit"),
       diditAvailable: diditAvailable(count),

@@ -14,7 +14,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { getVerificationState } from "@/lib/verification.functions";
 import { verifiedTabUnlocked } from "@/lib/studio-access";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
-import { VerificationPanel } from "@/components/dashboard/VerificationPanel";
+import { IdentityVerification } from "@/components/settings/IdentityVerification";
 import { BookingStudioPanel } from "@/pages/BookingStudio";
 
 type PageMode = "profile" | "tip" | "booking";
@@ -140,7 +140,7 @@ function LockedVerifiedTab() {
           {t("studio.profile.unlock")}
         </p>
       </div>
-      <VerificationPanel />
+      <IdentityVerification />
     </div>
   );
 }
