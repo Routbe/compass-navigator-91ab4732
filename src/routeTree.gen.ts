@@ -135,6 +135,7 @@ import { Route as AuthenticatedConsoleAppsIndexRouteImport } from './routes/_aut
 import { Route as AuthenticatedConsoleAppsAppIdRouteImport } from './routes/_authenticated/console.apps.$appId'
 import { Route as AuthenticatedConsoleAppsNewRouteImport } from './routes/_authenticated/console.apps.new'
 import { Route as AuthenticatedStudioPersonalFeatureRouteImport } from './routes/_authenticated/studio_.personal.$feature'
+import { Route as AuthenticatedStudioWorkspacesNewRouteImport } from './routes/_authenticated/studio_.workspaces.new'
 import { Route as ApiPublicAuthProvidersRouteImport } from './routes/api_.public.auth.providers'
 import { Route as ApiPublicBadgeHandleRouteImport } from './routes/api_.public.badge.$handle'
 import { Route as ApiPublicBlueskyCallbackRouteImport } from './routes/api_.public.bluesky.callback'
@@ -847,6 +848,12 @@ const AuthenticatedStudioPersonalFeatureRoute =
     path: '/studio/personal/$feature',
     getParentRoute: () => AuthenticatedRoute,
   } as any)
+const AuthenticatedStudioWorkspacesNewRoute =
+  AuthenticatedStudioWorkspacesNewRouteImport.update({
+    id: '/studio_/workspaces/new',
+    path: '/studio/workspaces/new',
+    getParentRoute: () => AuthenticatedRoute,
+  } as any)
 const ApiPublicAuthProvidersRoute = ApiPublicAuthProvidersRouteImport.update({
   id: '/api_/public/auth/providers',
   path: '/api/public/auth/providers',
@@ -1293,6 +1300,7 @@ export interface FileRoutesByFullPath {
   '/console/apps/$appId': typeof AuthenticatedConsoleAppsAppIdRouteWithChildren
   '/console/apps/new': typeof AuthenticatedConsoleAppsNewRoute
   '/studio/personal/$feature': typeof AuthenticatedStudioPersonalFeatureRoute
+  '/studio/workspaces/new': typeof AuthenticatedStudioWorkspacesNewRoute
   '/api/public/auth/providers': typeof ApiPublicAuthProvidersRoute
   '/api/public/badge/$handle': typeof ApiPublicBadgeHandleRoute
   '/api/public/bluesky/callback': typeof ApiPublicBlueskyCallbackRoute
@@ -1471,6 +1479,7 @@ export interface FileRoutesByTo {
   '/console': typeof AuthenticatedConsoleIndexRoute
   '/console/apps/new': typeof AuthenticatedConsoleAppsNewRoute
   '/studio/personal/$feature': typeof AuthenticatedStudioPersonalFeatureRoute
+  '/studio/workspaces/new': typeof AuthenticatedStudioWorkspacesNewRoute
   '/api/public/auth/providers': typeof ApiPublicAuthProvidersRoute
   '/api/public/badge/$handle': typeof ApiPublicBadgeHandleRoute
   '/api/public/bluesky/callback': typeof ApiPublicBlueskyCallbackRoute
@@ -1656,6 +1665,7 @@ export interface FileRoutesById {
   '/_authenticated/console/apps/$appId': typeof AuthenticatedConsoleAppsAppIdRouteWithChildren
   '/_authenticated/console/apps/new': typeof AuthenticatedConsoleAppsNewRoute
   '/_authenticated/studio_/personal/$feature': typeof AuthenticatedStudioPersonalFeatureRoute
+  '/_authenticated/studio_/workspaces/new': typeof AuthenticatedStudioWorkspacesNewRoute
   '/api_/public/auth/providers': typeof ApiPublicAuthProvidersRoute
   '/api_/public/badge/$handle': typeof ApiPublicBadgeHandleRoute
   '/api_/public/bluesky/callback': typeof ApiPublicBlueskyCallbackRoute
@@ -1841,6 +1851,7 @@ export interface FileRouteTypes {
     | '/console/apps/$appId'
     | '/console/apps/new'
     | '/studio/personal/$feature'
+    | '/studio/workspaces/new'
     | '/api/public/auth/providers'
     | '/api/public/badge/$handle'
     | '/api/public/bluesky/callback'
@@ -2019,6 +2030,7 @@ export interface FileRouteTypes {
     | '/console'
     | '/console/apps/new'
     | '/studio/personal/$feature'
+    | '/studio/workspaces/new'
     | '/api/public/auth/providers'
     | '/api/public/badge/$handle'
     | '/api/public/bluesky/callback'
@@ -2203,6 +2215,7 @@ export interface FileRouteTypes {
     | '/_authenticated/console/apps/$appId'
     | '/_authenticated/console/apps/new'
     | '/_authenticated/studio_/personal/$feature'
+    | '/_authenticated/studio_/workspaces/new'
     | '/api_/public/auth/providers'
     | '/api_/public/badge/$handle'
     | '/api_/public/bluesky/callback'
@@ -3275,6 +3288,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedStudioPersonalFeatureRouteImport
       parentRoute: typeof AuthenticatedRoute
     }
+    '/_authenticated/studio_/workspaces/new': {
+      id: '/_authenticated/studio_/workspaces/new'
+      path: '/studio/workspaces/new'
+      fullPath: '/studio/workspaces/new'
+      preLoaderRoute: typeof AuthenticatedStudioWorkspacesNewRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
     '/api_/public/auth/providers': {
       id: '/api_/public/auth/providers'
       path: '/api/public/auth/providers'
@@ -3830,6 +3850,7 @@ interface AuthenticatedRouteChildren {
   AuthenticatedStudioAccountRoute: typeof AuthenticatedStudioAccountRoute
   AuthenticatedStudioBookingRoute: typeof AuthenticatedStudioBookingRoute
   AuthenticatedStudioPersonalFeatureRoute: typeof AuthenticatedStudioPersonalFeatureRoute
+  AuthenticatedStudioWorkspacesNewRoute: typeof AuthenticatedStudioWorkspacesNewRoute
   AuthenticatedStudioWWorkspaceSlugFeatureRoute: typeof AuthenticatedStudioWWorkspaceSlugFeatureRoute
   AuthenticatedStudioWWorkspaceSlugSettingsRoute: typeof AuthenticatedStudioWWorkspaceSlugSettingsRoute
 }
@@ -3845,6 +3866,7 @@ const AuthenticatedRouteChildren: AuthenticatedRouteChildren = {
   AuthenticatedStudioBookingRoute: AuthenticatedStudioBookingRoute,
   AuthenticatedStudioPersonalFeatureRoute:
     AuthenticatedStudioPersonalFeatureRoute,
+  AuthenticatedStudioWorkspacesNewRoute: AuthenticatedStudioWorkspacesNewRoute,
   AuthenticatedStudioWWorkspaceSlugFeatureRoute:
     AuthenticatedStudioWWorkspaceSlugFeatureRoute,
   AuthenticatedStudioWWorkspaceSlugSettingsRoute:
