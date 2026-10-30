@@ -48,32 +48,66 @@ export const setActiveWorkspace = createServerFn({ method: "POST" })
     return { ok: true as const };
   });
 
+const wizardSchema = z.object({
+  name: z.string().trim().min(1).max(80),
+  description: z.string().trim().max(280).optional(),
+  slugBase: z.string().trim().toLowerCase().max(34).optional(),
+  category: z.enum(["business", "agency", "nonprofit", "event", "project"]).optional(),
+  invites: z.array(z.object({ email: z.string().trim().toLowerCase().email().max(254), role: z.enum(["admin", "developer", "viewer"]) })).max(20).optional(),
+});
+
+/** Is rout.be/w/<base>-xxxx still free for this base? (suffix keeps it unique; the base must be valid and not reserved). */
+export const checkWorkspaceSlugBase = createServerFn({ method: "POST" })
+  .middleware([requireAuth])
+  .inputValidator((d) => z.object({ base: z.string().trim().toLowerCase().max(40) }).parse(d))
+  .handler(async ({ data }) => {
+    const { isValidWorkspaceSlug, randomSlugSuffix } = await import("./workspace-rules");
+    const suffix = randomSlugSuffix();
+    if (data.base.length < 3 || !isValidWorkspaceSlug(`${data.base}-${suffix}`)) return { ok: false as const, suffix, reason: "invalid" };
+    const { sql } = await import("@/lib/neon");
+    const taken = (await sql`select 1 from public.workspaces where slug = ${`${data.base}-${suffix}`} limit 1`) as unknown[];
+    return { ok: !taken.length, suffix, reason: taken.length ? "taken" : null };
+  });
+
 export const createWorkspace = createServerFn({ method: "POST" })
   .middleware([requireAuth])
-  .inputValidator((d) => z.object({ name: z.string().trim().min(1).max(80) }).parse(d))
+  .inputValidator((d) => wizardSchema.parse(d))
   .handler(async ({ data, context }) => {
     const { sql } = await import("@/lib/neon");
     const { setActiveWorkspaceCookie } = await import("./workspaces.server");
     const { matrixWorkspaceSlug, isValidWorkspaceSlug } = await import("./workspace-rules");
+    const { stepError } = await import("./workspace-wizard");
+    const invites = data.invites ?? [];
+    const teamErr = stepError("team", { name: data.name, description: "", avatarUrl: null, slugBase: "", category: null, invites });
+    if (teamErr) throw new Error(teamErr);
+    const base = data.slugBase && data.slugBase.length >= 3 ? data.slugBase : data.name;
     let slug = "";
     // Nieuwe workspaces starten op het gratis plan: altijd een willekeurige suffix.
     for (let i = 0; i < 12 && !slug; i++) {
-      const candidate = matrixWorkspaceSlug(data.name, "free");
+      const candidate = matrixWorkspaceSlug(base, "free");
       if (!isValidWorkspaceSlug(candidate)) continue;
       const taken = (await sql`select 1 from public.workspaces where slug = ${candidate} limit 1`) as unknown[];
       if (!taken.length) slug = candidate;
     }
     if (!slug) throw new Error("Geen vrij workspace-adres gevonden. Kies een andere naam.");
-    const [res] = (await sql.transaction([
-      sql`insert into public.workspaces (name, slug) values (${data.name}, ${slug})`,
+    const own = (await sql`select lower(email) as e from public.users where id = ${context.userId} limit 1`) as { e: string | null }[];
+    const others = invites.filter((i) => i.email !== own[0]?.e);
+    // Eén transactie: workspace, eigenaar en uitnodigingen bestaan samen of niet.
+    const res = await sql.transaction([
+      sql`insert into public.workspaces (name, slug, description, category)
+          values (${data.name}, ${slug}, ${data.description || null}, ${data.category ?? null})`,
       sql`insert into public.workspace_members (workspace_id, user_id, role)
           select id, ${context.userId}, 'owner' from public.workspaces where slug = ${slug}`,
+      ...others.map((i) => sql`insert into public.workspace_invites (workspace_id, email, role, invited_by)
+          select id, ${i.email}, ${i.role}::public.workspace_role, ${context.userId} from public.workspaces where slug = ${slug}
+          on conflict (workspace_id, lower(email)) where status = 'pending' do nothing`),
       sql`select id from public.workspaces where slug = ${slug}`,
-    ])).slice(2) as { id: string }[][];
-    const id = res?.[0]?.id;
+    ]);
+    const last = res[res.length - 1] as { id: string }[];
+    const id = last?.[0]?.id;
     if (!id) throw new Error("Workspace kon niet worden aangemaakt.");
     await setActiveWorkspaceCookie(id);
-    return { id };
+    return { id, slug, invited: others.length };
   });
 
 export const listWorkspaceTeam = createServerFn({ method: "POST" })
