@@ -1,7 +1,7 @@
 import { isReservedName } from "./reserved-brands";
 /** Pure workspace/RBAC rules — shared by server checks and UI, unit-tested. */
 
-export const WORKSPACE_ROLES = ["owner", "admin", "developer", "editor"] as const;
+export const WORKSPACE_ROLES = ["owner", "admin", "developer", "editor", "viewer"] as const;
 export type WorkspaceRole = (typeof WORKSPACE_ROLES)[number];
 
 export const ROLE_LABELS: Record<WorkspaceRole, string> = {
@@ -9,6 +9,7 @@ export const ROLE_LABELS: Record<WorkspaceRole, string> = {
   admin: "Admin",
   developer: "Developer",
   editor: "Editor",
+  viewer: "Viewer",
 };
 
 export function isWorkspaceRole(v: unknown): v is WorkspaceRole {
