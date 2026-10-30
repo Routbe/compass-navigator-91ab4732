@@ -20,3 +20,11 @@ export function stripBioLinks(text: string | null | undefined): string | null {
   const out = text.replace(LINK_RE, "").replace(/[ \t]{2,}/g, " ").trim();
   return out || null;
 }
+
+/** "Lid sinds …" is system metadata (rendered from the account's creation date); members may not type it. */
+const MEMBER_SINCE_RE = /\b(lid\s+sinds|member\s+since|membre\s+depuis|mitglied\s+seit)\b/i;
+export const BIO_MEMBER_SINCE_MESSAGE =
+  "\"Lid sinds\" toont ROUT zelf als badge op je profiel. Haal het uit je bio.";
+export function bioClaimsMemberSince(text: string | null | undefined): boolean {
+  return Boolean(text && MEMBER_SINCE_RE.test(text));
+}

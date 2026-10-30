@@ -1495,6 +1495,7 @@
   "workspace.role.admin": "Beheerder",
   "workspace.role.developer": "Ontwikkelaar",
   "workspace.role.editor": "Editor",
+  "workspace.role.viewer": "Kijker",
   "socialBlock": {
     "settings": "Extra instellingen",
     "connect": "Koppel je account",

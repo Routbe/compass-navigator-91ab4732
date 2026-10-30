@@ -1,4 +1,5 @@
 import { hasProfilePro } from "./profile-entitlements";
+import { tiersFor } from "./identity/identity-tiers";
 import { sql } from "@/lib/neon";
 import { isReservedHandle, normalizeHandle } from "@/lib/profile";
 import { normalizeHandleForStorage } from "@/lib/handle-rules";
@@ -173,9 +174,12 @@ export async function readPublicAliasProfile(rawHandle: string) {
            coalesce(p.verified, false) as owner_verified,
            p.verified_at as owner_verified_at,
            coalesce((to_jsonb(p) ->> 'is_paid')::boolean, false) as owner_is_paid,
-           to_jsonb(p) ->> 'tier' as owner_tier
+           to_jsonb(p) ->> 'tier' as owner_tier,
+           iv.verification_provider::text as owner_identity_provider,
+           coalesce(iv.is_verified, false) as owner_identity_verified
       from public.alias_profiles a
       join public.profiles p on p.id = a.user_id
+      left join public.identity_verifications iv on iv.user_id = a.user_id
      where lower(a.handle) = ${handle}
        and a.enabled = true
        and coalesce(p.is_banned, false) = false
@@ -189,7 +193,8 @@ export async function readPublicAliasProfile(rawHandle: string) {
     is_pro: hasProfilePro({ verified: row["owner_verified"], is_paid: row["owner_is_paid"], tier: row["owner_tier"] }),
     // Het blauwe vinkje blijft bij het rootprofiel; het aliasprofiel toont het
     // mens-symbool wanneer het gekoppelde account geverifieerd is.
-    human_linked: Boolean(row["owner_verified"]),
+    // Tier 1 or 2 (or the legacy verified account) unlocks the discrete "Real Human" badge.
+    human_linked: Boolean(row["owner_verified"]) || tiersFor([{ provider: (row["owner_identity_provider"] as string | null) ?? null, verified: row["owner_identity_verified"] === true }]).tier1RealHuman,
     verified_at: (row["owner_verified_at"] as string | null) ?? null,
     verified_legal_name: null,
     is_early_believer: false,

@@ -1,6 +1,6 @@
 import { createServerFn } from "@tanstack/react-start";
 import { requireAuth } from "@/lib/auth/middleware";
-import { BIO_LINK_MESSAGE, bioContainsLink } from "@/lib/bio-rules";
+import { BIO_LINK_MESSAGE, BIO_MEMBER_SINCE_MESSAGE, bioClaimsMemberSince, bioContainsLink } from "@/lib/bio-rules";
 
 /** Server RPC layer backing the /dashboard/profile page. */
 export const getProfileSettings = createServerFn({ method: "GET" })
@@ -25,6 +25,7 @@ export const saveProfileSettings = createServerFn({ method: "POST" })
       typeof v === "string" && v.trim() ? v.trim().slice(0, max) : null;
     const bio = str(input?.bio, 1000);
     if (bioContainsLink(bio)) throw new Error(BIO_LINK_MESSAGE);
+    if (bioClaimsMemberSince(bio)) throw new Error(BIO_MEMBER_SINCE_MESSAGE);
     // Alleen deze vijf velden komen door: geen rollen, badges of verificatie.
     return {
       username: str(input?.username, 64),

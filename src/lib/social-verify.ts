@@ -120,4 +120,6 @@ export type PublicSocialLink = {
   url: string;
   followerCount: number | null;
   isVerified: boolean;
+  /** Last automatic ownership check (ISO). */
+  lastSyncedAt?: string | null;
 };

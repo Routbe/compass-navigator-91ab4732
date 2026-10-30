@@ -1495,6 +1495,7 @@
   "workspace.role.admin": "Administrateur",
   "workspace.role.developer": "Développeur",
   "workspace.role.editor": "Éditeur",
+  "workspace.role.viewer": "Lecteur",
   "socialBlock": {
     "settings": "Paramètres supplémentaires",
     "connect": "Connecter votre compte",

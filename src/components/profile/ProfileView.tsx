@@ -62,12 +62,10 @@ import { formatReach } from "@/lib/total-reach";
 import { FavoritesShowcase } from "@/components/profile/FavoritesShowcase";
 import { ProfileTimeline } from "@/components/profile/ProfileTimeline";
 import { BadgeShowcase } from "@/components/profile/BadgeShowcase";
-import { VerifiedInfoDialog } from "@/components/profile/VerifiedInfoDialog";
-import { monthYear } from "@/components/profile/VerifiedBadgePopover";
 import { ProfileBadge } from "@/components/profile/ProfileBadge";
 import { ProfilePassport } from "@/components/profile/CustomBadgeRow";
 import type { BadgeType } from "@/lib/profile-display";
-import { EarlyBelieverBadge } from "@/components/profile/EarlyBelieverBadge";
+import { MemberSinceBadge, PioneerBadge } from "@/components/profile/TrustBadges";
 import {
   backgroundLayers,
   textureLayer,
@@ -214,7 +212,8 @@ export function ProfileView({
     : null;
   const showBadge = free
     ? Boolean(profile.human_linked) && prefs.humanBadgeVisible
-    : Boolean(profile.verified) && prefs.badgeVisible && prefs.badgeType !== "none";
+    : // Blauw vinkje: alleen bij niveau 2 (wettelijke identiteit); oudere betaalde verificaties blijven gelden.
+      Boolean(profile.verified) && profile.legal_identity_verified !== false && prefs.badgeVisible && prefs.badgeType !== "none";
   /**
    * Beide badges zijn vrij te kiezen: een geverifieerd lid mag het blauwe
    * vinkje (identiteit + land) of het privacy-schild (enkel "echte mens")
@@ -239,7 +238,6 @@ export function ProfileView({
     (hasPro ? prefs.showRoutBadge : true);
   const wide = layout === "wide";
   const earlyBeliever = Boolean(profile.is_early_believer);
-  const [showVerifyInfo, setShowVerifyInfo] = useState(false);
   const [wireframe, setWireframe] = useWireframeMode();
   /** Taalpil: auto-detect via de sitetaal, bezoeker mag zelf wisselen. */
   const bioLocales = availableBioLocales(prefs);
@@ -250,7 +248,6 @@ export function ProfileView({
       ? `${profile.username}@rout.be`
       : null;
 
-  const memberSince = monthYear(profile.created_at ?? null, locale || "nl");
 
   const socialRow = (profile.social_links ?? []).length > 0 && (
     <div className="mt-6 flex flex-wrap items-center justify-center gap-2">
@@ -274,7 +271,7 @@ export function ProfileView({
               {username && <span>@{username.replace(/^@/, "")}</span>}
               {followers && <span>{followers}  {tx("profile.followersLabel")} </span>}
             </a>
-            <VerifiedAccountCheck name={profile.display_name || profile.username} platform={PLATFORM_LABEL[link.platform]} handle={username} className="h-3 w-3" theme={t} />
+            <VerifiedAccountCheck name={profile.display_name || profile.username} platform={PLATFORM_LABEL[link.platform]} handle={username} className="h-3 w-3" theme={t} lastCheckedAt={(link as { lastSyncedAt?: string | null }).lastSyncedAt ?? null} followers={followers} profileHandle={profile.username} />
           </span>
         );
       })}
@@ -439,6 +436,15 @@ export function ProfileView({
               mutedColor={t.muted}
             />
           )}
+          {earlyBeliever && (
+            <PioneerBadge
+              badgeId={profile.early_believer_id ?? null}
+              grantedAt={profile.early_believer_at ?? null}
+              fallbackDate={profile.created_at ?? null}
+              locale={locale || "nl"}
+              theme={t}
+            />
+          )}
           <ProfilePassport handle={profile.username} theme={t} compact />
         </h1>
         {profile.username && <ProfilePageTabs handle={profile.username} theme={t} />}
@@ -453,21 +459,15 @@ export function ProfileView({
         {profile.username && prefs.questionsEnabled && <ProfileQuestions handle={profile.username} theme={t} />}
 
         {earlyBeliever && (
-          <EarlyBelieverBadge
-            onClick={() => setShowVerifyInfo(true)}
-            borderColor={t.border}
-            textColor={t.text}
+          <PioneerBadge
+            variant="stamp"
+            badgeId={profile.early_believer_id ?? null}
+            grantedAt={profile.early_believer_at ?? null}
+            fallbackDate={profile.created_at ?? null}
+            locale={locale || "nl"}
+            theme={t}
           />
         )}
-
-        <VerifiedInfoDialog
-          open={showVerifyInfo}
-          onClose={() => setShowVerifyInfo(false)}
-          username={profile.username}
-          createdAt={profile.created_at ?? null}
-          verified={Boolean(profile.verified)}
-          earlyBeliever={earlyBeliever}
-        />
         {/* Gratis leden tonen hun alias-namespace, Pro-leden hun schone handle.
             De subtitel is een subtiele link naar het live profiel. */}
         <a
@@ -490,11 +490,13 @@ export function ProfileView({
           </span>
         )}
 
-        {memberSince && (
-          <p className="mt-1 text-center text-xs" style={{ color: t.muted }}>
-            {tr("profile.member_since")} {memberSince}
-          </p>
-        )}
+        <MemberSinceBadge
+          createdAt={profile.created_at_iso ?? profile.created_at ?? null}
+          stamp={profile.genesis_stamp ?? null}
+          label={tr("profile.member_since")}
+          locale={locale || "nl"}
+          theme={t}
+        />
         {aliasEmail && (
           <a
             href={`mailto:${aliasEmail}`}
