@@ -1,4 +1,4 @@
-import { glassSurfaceStyle, resolveScopedTokens, scopeOfBlockKind } from "@/lib/theme-engine";
+import { glassSurfaceStyle, resolveComponentDesign, resolveScopedTokens, scopeOfBlockKind } from "@/lib/theme-engine";
 import { LocaleDropdown } from "@/components/LocaleDropdown";
 import { profileSurface } from "@/lib/profile-surface";
 import { profileImageSrc } from "@/lib/image-proxy-rules";
@@ -172,7 +172,14 @@ export function ProfileView({
       scope,
       prefs.glassTargets,
     );
-    return glass ? { ...(buttonStyle ?? {}), ...glass } : buttonStyle;
+    const design = resolveComponentDesign(prefs, prefs.themeOverrides, scope);
+    const own = design.hasButtonOverride
+      ? {
+          ...(designButtonStyle({ ...design, buttonsCustom: true }, t) ?? {}),
+          ...(prefs.themeOverrides[scope]?.fontPairing ? { fontFamily: fontPairingOf(design.fontPairing).body } : {}),
+        }
+      : buttonStyle;
+    return glass ? { ...(own ?? {}), ...glass } : own;
   };
   const iconOnly = (prefs.buttonsCustom || prefs.customDesign) && prefs.buttonShape === "icon";
   /** Eigen canvas- en patroonkleuren overschrijven het thema, indien gekozen. */
